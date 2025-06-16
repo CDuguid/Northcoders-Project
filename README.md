@@ -1,182 +1,164 @@
 # Totesys - Data Engineering Pipeline Project
 
+This is the final group project for the Northcoders data engineering course. In it, we created an ETL pipeline to handle the data for a fictional company.
 
-This project creates an automated data pipeline to extract, transform and load data from a database into a data warehouse using infrastructure-as-code. This is set up to run every minute.
+Every 15 minutes, the pipeline ingests data from a Postgres database and stores it as JSON in an S3-hosted data lake. It then transforms data into parquet, and loads it into a star schema data warehouse. The process is orchestrated with a Step Function, whose execution is monitored by CloudWatch and whose errors generate email alerts through SNS.
 
-## Features
+Testing and infrastructure deployment are automated with GitHub Actions. Documentation for our functions [can be found here](https://cduguid.github.io/Northcoders-Project/), courtesy of pdoc.
+
+Data visualisations were created with Tableau.
 
 ![Pipeline](./visualisations/AWS-diagram.png)
 
 
-In the extraction step, we have an AWS Lambda that extracts data from a Postgres database every minute, and stores it in our S3 ingestion bucket.
-
-Completion of this step triggers our AWS Step Function to run the Transformation step, where an AWS Lambda takes data from the S3 bucket and transforms it into a format suitable for our data warehouse. This is stored into a second S3 bucket.
-
-Finally, in the Load step, we take data from our second S3 bucket and load it into our data warehouse, ready to be used in data visualisation.
-This entire process is set up to run in a CI/CD pipeline, and AWS CloudWatch is used throughout to monitor our pipeline and send email alerts if the pipeline breaks.
-
-Documentation for our functions [can be found here](https://nahisah.github.io/totesys/), courtesy of pdoc.
-
 ## Technologies used
 
-Python  
-- Boto3 
-- pandas
-- moto
-- pg8000
-- pytest
-- requests
-- awswrangler
-- dotenv
-- currency_codes
+- Python
+  - boto3
+  - moto
+  - pandas
+  - pg8000
+  - pytest
+  - requests
+  - awswrangler
+  - dotenv
+  - currency_codes
 
-AWS services 
-- Lambda
-- Step Functions
-- CloudWatch
-- SNS
-- IAM
-- S3
-- SecretsManager
-- RDS
+- AWS services 
+  - Lambda
+  - Step Functions
+  - CloudWatch
+  - SNS
+  - IAM
+  - S3
+  - SecretsManager
+  - RDS
 
-Terraform
+- Terraform
 
-SQL
+- Postgres (SQL)
 
-Postgres
+- GitHub Actions
 
-GitHub Actions
+- Make
 
-Make
 
 ## Installation and setup
-This project is intended to run on Linux.
+This project is intended to run on Linux. It is assumed that you have access to a Postgres databse for data ingestion and warehouse for data loading.
 
-Start with forking the repository on GitHub and cloning it to your local machine. To do this, make a separate directory on your machine and input the following command:
-
+Start with [forking](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/fork-a-repo) the repository on GitHub and cloning it to your local machine. To do this, make a separate directory on your machine and input the following command:
 ```bash
 git clone <forked repository link>
 ```
+
  Once cloned, move into your cloned repository:
  ```bash
- cd totesys
+ cd Northcoders-Project
 ```
+
 Installing dependencies and requirements is automated, but first you'll need to install Make to be able to run the required command:
 ```bash
 pip install make
 ```
+
 Once this is done, you can use the following command to automatically set up requirements:
 ```bash
 make run-setup
 ```
-### Setting up AWS credentials
-This part requires going into the project files and changing a bit of code as this project was originally working off a single AWS account shared between contributors. 
 
-To be able to set this project up to work on your AWS Console, you will need to setup [AWS Secrets Manager](https://docs.aws.amazon.com/secretsmanager/latest/userguide/intro.html) with your database and warehouse credentials. The secrets you store should be in the following format:
-```bash 
+### Setting up AWS credentials
+You will need access to an AWS account to run this project.
+
+First, create an [IAM User](https://docs.aws.amazon.com/IAM/latest/UserGuide/getting-started.html) with access to at least the AWS services mentioned previously. In your GitHub repo, go to Settings > Secrets and variables > Actions. Click on 'New repository secret'. You will need to add two secrets with the information from creating your IAM user: `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`.
+
+Second, you need to set up [AWS Secrets Manager](https://docs.aws.amazon.com/secretsmanager/latest/userguide/intro.html) with your database and warehouse credentials. The secrets you store should have the following key-value pairs:
+```
 user: <username>
 password: <password>
 host: <host>
 database: <database name>
 port: <port>
 ```
-Once done, you can replace the ARN with the secrets you just made in the following places:
 
-In `src/ingestion/ingest_lambda.py/lambda_handler`:
-```bash 
-secret_name = "arn:aws:secretsmanager:<your-region>:<your-aws-account-id>:secret:<your-secret-name>-<some-digits>"  
+Third, copy the ARN of the secrets you just made. You will need to replace two lines of the code with the database secret:
+
+In `lambda_handler` in `src/ingestion/ingest_lambda.py`:
+```python
+secret_name = "<your-database-secret_arn>"  
 ```
-In `src/load/load_lambda.py/lambda_handler`:
-```bash
-secret_name = "arn:aws:secretsmanager:<your-region>:<your-aws-account-id>:secret:<your-secret-name>-<some-digits>" 
-```
-Once this has been done you can set your [AWS credentials](https://docs.aws.amazon.com/cli/v1/userguide/cli-chap-configure.html) onto your local machine:
-```bash
-aws configure
+In `database_credentials` in `terraform/vars.tf`:
+```HCL
+default = "<your-database-secret_arn>"
 ```
 
-### Postgres
-If not already set up, you will need to setup Postgres on your machine. A guide to doing this on Ubuntu can be found [here](https://documentation.ubuntu.com/server/how-to/databases/install-postgresql/index.html).
+And two lines of code with the warehouse secret:
 
-### Testing
-While testing happens automatically on push to github, if you wish to test files locally you will need to set up a .env file:
+In `lambda_handler` in `src/load/load_lambda.py`:
+```python
+secret_name = "<your-warehouse-secret_arn>"  
+```
+In `warehouse_credentials` in `terraform/vars.tf`:
+```HCL
+default = "<your-warehouse-secret_arn>"
+```
+
+Fourth, [create an S3 bucket](https://docs.aws.amazon.com/AmazonS3/latest/userguide/create-bucket-overview.html) to store the Terraform state file. You will need to replace one line in the `terraform/main.tf` file:
+```HCL
+bucket = "<the_name_of_your_S3_bucket>"
+```
+
+## Testing
+While testing happens automatically on push to GitHub, if you wish to test files locally you will need to set up a .env file:
 ```bash
 touch .env
 ```
 
 With the following credentials:
-```bash
+```
 DBUSER = <your-postgres-user>
 DBNAME = mock_totesys
 DBPASSWORD = <your-postgres-password>
 PORT = 5432
 HOST = localhost
 ```
-You will need to change this file depending on whether you are testing with the mock database or the mock warehouse.
 
-You can run either of these commands to run database or warehouse tests respectively:
+**Note:** Testing of the load functions happens separately from testing of the extract/transform/utility functions. To test the load functions locally, change the value of `DBNAME` to be `mock_warehouse`.
+
+If not already installed, you will need to set up Postgres on your machine. A guide to doing this on Ubuntu can be found [here](https://documentation.ubuntu.com/server/how-to/databases/install-postgresql/index.html). Once this is installed, run the following two commands:
+```bash
+psql -f data/seed_mock_db.sql
+psql -f data/seed_mock_warehouse.sql
+```
+
+You can now run either of these commands to run extract/transform/utility tests or load tests respectively:
 ```bash
 make unit-test-initial
 make unit-test-load
 ```
-
-### AWS Infrastructure
-In order to deploy terraform infrastructure, you will need to follow these steps:
-
-Move into your terraform directory
-```bash
-cd terraform
-```
-Initialise terraform
-```bash
-terraform init
-```
-To setup the rest of the infrastructure you will need to trigger the workflow once by pushing to GitHub so everything is set up correctly. You can apply Terraform manually after that using:
-
-```bash
-terraform apply -auto-approve -input=false -var="deploy_lambda_bool=true" 
-```
- provided you don't destroy the code bucket.
-
 
 ## Execution and usage
-### Manual testing
-You can run either of these commands to run database or warehouse tests respectively:
-```bash
-make unit-test-initial
-make unit-test-load
-```
-Or you can run tests individually for each lambda using pytest.
-```bash 
-source venv/bin/activate
-pytest test/<test_file_name>
-```
 
-For manual terraform applications, you will need to run the following command to apply your changes:
-```bash
-terraform apply -auto-approve -input=false -var="deploy_lambda_bool=true" 
-```
-Be aware that in order for changes to AWS Lambda code to reflect in your console, you will need to trigger the GitHub Actions workflow.
 ### CI/CD Execution using GitHub Actions
-The project is configured to be fully automated. The GitHub Actions workflow triggers on push to your GitHub repository. This triggers a series of tests as well as security, linting and formatting checks. 
+The project is configured to be fully automated. The GitHub Actions workflow triggers on [push](https://github.com/git-guides/git-push) to your GitHub repository. This triggers a series of tests as well as security, linting and formatting checks. After those checks are passed, the AWS infrastructure will be deployed.
 
-A successful check sets up the pipeline to run every minute. You can see CloudWatch logs for this process in your AWS console.
+For this to work correctly, ensure that you have enabled the project's workflow under the Actions tab of your GitHub repo.
+
+Manual deployment is not recommended, due to the code for the Lambda functions being stored in an S3 bucket that is provisioned during deployment. If you wish to try this anyway, follow the sequence of steps in the `.github/workflows/github_actions.yml` file.
 
 ### Errors
-In order to receive e-mail notifications for Lambda alarms caused by errors in the pipeline, you will need to go to `terraform/scheduler.tf` and change `protocol` in `resource "aws_sns_topic_subscription" "load_email_alert"` to include your e-mail instead. You need to do this in 3 places.
+In order to receive e-mail notifications for Lambda alarms caused by errors in the pipeline, you will need to go to `terraform/vars.tf` and change `default` in `alerts_email` to include your e-mail instead.
 
-Upon doing this and applying the changes, you will receive three e-mails to confirm your SNS subscriptions. Once confirmed, you will be notified any time a problem occurs and can diagnose the problem using AWS CloudWatch log streams.
+When the changes are applied, you will receive three e-mails to confirm your SNS subscriptions. Once confirmed, you will be notified any time a problem occurs and can diagnose the problem using AWS CloudWatch log streams.
 
 
 ## Data
 
-The original database called `totesys` simulates the back-end data of a commercial application and has 11 tables, out of which we use 7 to complete the MVP.
+The original `totesys` database simulates the back-end data of a commercial application and has 11 tables, out of which we use 7 to complete the MVP.
 
-![alt text](./visualisations/db_schema.png)
+![database schema](./visualisations/db_schema.png)
 
 The tables that we use from `totesys` are:
-|tablename|
+|totesys tables|
 |----------|
 |counterparty|
 |currency|
@@ -187,7 +169,7 @@ The tables that we use from `totesys` are:
 |address|
 
 We then transform the data to populate the following tables in the data warehouse: 
-|tablename|
+|warehouse tables|
 |---------|
 |fact_sales_order|
 |dim_staff|
@@ -199,7 +181,7 @@ We then transform the data to populate the following tables in the data warehous
 
 The resulting data warehouse has the following structure: 
 
-![alt text](./visualisations/warehouse_schema.png)
+![warehouse schema](./visualisations/warehouse_schema.png)
 
 
 ### Data insights
@@ -221,5 +203,3 @@ Callum, Cristine, Marc, Marta, Nahisah, Taimoor
 This project was created as a part of the Northcoders Data Engineering Bootcamp.
 
 https://www.northcoders.com/
-
-
