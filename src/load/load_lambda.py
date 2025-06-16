@@ -3,8 +3,9 @@ Contains the main function used by the Load Lambda AWS resource.
 """
 
 import json
-import os
 import logging
+import os
+
 import requests
 
 from src.load.load_utils import (
@@ -32,7 +33,7 @@ def lambda_handler(event, context):
 
     try:
         secret_name = (
-            "arn:aws:secretsmanager:eu-west-2:389125938424:secret:datawarehouse-zhlI93"
+            "arn:aws:secretsmanager:eu-west-2:267414915338:secret:Totesys_Warehouse_Credentials-4OiHJW"
         )
 
         secrets_extension_endpoint = (
@@ -73,7 +74,7 @@ def lambda_handler(event, context):
             logger.info(f"Extracted data from processed bucket for table {table_name}.")
             table_names[table_name](df)
             logger.info(f"Loaded {table_name} to the warehouse.")
-        
+
         return {
             "statusCode": 200,
             "body": json.dumps({"message": "Data successfully loaded"}),

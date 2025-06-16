@@ -1,8 +1,9 @@
 resource "aws_s3_bucket" "ingestion-bucket" {
-  bucket_prefix       = "bucket-one-ingestion"
+  bucket_prefix       = "ingestion-bucket"
   object_lock_enabled = true
   tags = {
-  BucketUsage = "Bucket for data ingestion" }
+    BucketUsage = "Bucket for data ingestion"
+  }
 }
 
 resource "aws_s3_bucket_versioning" "ingestion_versioning" {
@@ -23,7 +24,7 @@ resource "aws_s3_bucket_object_lock_configuration" "ingestion_bucket_lock" {
 }
 
 resource "aws_s3_bucket" "processed-bucket" {
-  bucket_prefix       = "bucket-two-processed"
+  bucket_prefix       = "processed-bucket"
   object_lock_enabled = true
   tags = {
     BucketUsage = "Bucket for processed/transformed data"

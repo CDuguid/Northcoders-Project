@@ -33,14 +33,13 @@ data "aws_iam_policy_document" "ingestion_s3_document" {
     resources = ["${aws_s3_bucket.code-bucket.arn}/*"
     ]
   }
-
   statement {
     actions   = ["secretsmanager:GetSecretValue"]
-    resources = ["arn:aws:secretsmanager:eu-west-2:389125938424:secret:Totesys_DB_Credentials-4f8nsr"]
+    resources = [var.database_credentials]
   }
   statement {
     actions   = ["states:ListExecutions"]
-    resources = ["arn:aws:states:eu-west-2:389125938424:stateMachine:${aws_sfn_state_machine.totesys_state_machine.name}"]
+    resources = ["arn:aws:states:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:stateMachine:${aws_sfn_state_machine.totesys_state_machine.name}"]
   }
 }
 
@@ -276,7 +275,7 @@ data "aws_iam_policy_document" "load_s3_document" {
   }
   statement {
     actions   = ["secretsmanager:GetSecretValue"]
-    resources = ["arn:aws:secretsmanager:eu-west-2:389125938424:secret:datawarehouse-zhlI93"]
+    resources = [var.warehouse_credentials]
   }
 }
 
