@@ -3,8 +3,8 @@ Contains the main function used by the Ingestion Lambda AWS resource.
 """
 
 import json
-import os
 import logging
+import os
 
 import boto3
 import requests
@@ -24,7 +24,7 @@ def lambda_handler(event, context):
     logger.setLevel(logging.INFO)
 
     try:
-        secret_name = "arn:aws:secretsmanager:eu-west-2:389125938424:secret:Totesys_DB_Credentials-4f8nsr"
+        secret_name = "arn:aws:secretsmanager:eu-west-2:267414915338:secret:Totesys_DB_Credentials-YeWucm"
 
         secrets_extension_endpoint = (
             f"http://localhost:2773/secretsmanager/get?secretId={secret_name}"
@@ -32,7 +32,6 @@ def lambda_handler(event, context):
         headers = {
             "X-Aws-Parameters-Secrets-Token": os.environ.get("AWS_SESSION_TOKEN")
         }
-
 
         response = requests.get(secrets_extension_endpoint, headers=headers)
         logger.info(f"Response status code: {response.status_code}")

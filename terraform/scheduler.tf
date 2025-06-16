@@ -1,6 +1,6 @@
 resource "aws_cloudwatch_event_rule" "ingestion_scheduler" {
   name                = "ingestion_scheduler"
-  schedule_expression = "rate(1 minute)" # minute becomes minutes if more than 1 else it won't work
+  schedule_expression = "rate(15 minutes)"
 }
 
 resource "aws_cloudwatch_event_target" "ingestion_lambda" {
@@ -27,7 +27,7 @@ resource "aws_sns_topic" "ingestion_lambda_alert_topic" {
 resource "aws_sns_topic_subscription" "email_alert" {
   topic_arn = aws_sns_topic.ingestion_lambda_alert_topic.arn
   protocol  = "email"
-  endpoint  = "taimoor.deds@gmail.com"
+  endpoint  = var.alerts_email
 }
 
 resource "aws_cloudwatch_metric_alarm" "lambda_error_alarm" {
@@ -55,7 +55,7 @@ resource "aws_sns_topic" "transform_lambda_alert_topic" {
 resource "aws_sns_topic_subscription" "transform_email_alert" {
   topic_arn = aws_sns_topic.transform_lambda_alert_topic.arn
   protocol  = "email"
-  endpoint  = "taimoor.deds@gmail.com"
+  endpoint  = var.alerts_email
 }
 
 resource "aws_cloudwatch_metric_alarm" "transform_error_alarm" {
@@ -82,7 +82,7 @@ resource "aws_sns_topic" "load_lambda_alert_topic" {
 resource "aws_sns_topic_subscription" "load_email_alert" {
   topic_arn = aws_sns_topic.load_lambda_alert_topic.arn
   protocol  = "email"
-  endpoint  = "taimoor.deds@gmail.com"
+  endpoint  = var.alerts_email
 }
 
 resource "aws_cloudwatch_metric_alarm" "load_error_alarm" {

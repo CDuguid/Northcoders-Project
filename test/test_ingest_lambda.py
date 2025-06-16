@@ -66,9 +66,9 @@ def test_successful_request_returns_status_code_200(mock_request, client, step_c
     mock_text = json.dumps(mock_body)
     mock_request.get().text = mock_text
     assert lambda_handler({}, {}) == {
-            "statusCode": 200,
-            "body": json.dumps({"message": "Data successfully extracted"}),
-        }
+        "statusCode": 200,
+        "body": json.dumps({"message": "Data successfully extracted"}),
+    }
 
 
 @patch("src.ingestion.ingest_lambda.requests")
@@ -104,8 +104,6 @@ def test_all_data_successfully_put_inside_bucket(mock_request, client, step_clie
 
 
 @patch("src.ingestion.ingest_lambda.requests")
-
-
 def test_status_code_500_for_wrong_request(mock_request, step_client):
     step_client.create_state_machine(
         name="step-machine",

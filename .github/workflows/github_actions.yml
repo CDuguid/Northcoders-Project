@@ -86,13 +86,13 @@ jobs:
     steps:
     - name: Checkout out repository code
       uses: actions/checkout@v4
-
+    
     - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v4.1.0
+      uses: aws-actions/configure-aws-credentials@v4
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: "eu-west-2"
+        aws-region: eu-west-2
 
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v3
@@ -128,41 +128,34 @@ jobs:
     
     - name: Copying source code into lambda folder
       run: |
-            cp -r src/ingestion/* lambda/ingestion/src/ingestion/
-            cp -r src/ingestion/* lambda/ingestion/
-            cp -r src/utils lambda/ingestion/src/utils
-            cp -r src/transform/* lambda/transform/src/transform
-            cp -r src/transform/* lambda/transform/
-            cp -r src/utils lambda/transform/src/utils
-            cp -r src/load/* lambda/load/src/load
-            cp -r src/load/* lambda/load/
-            cp -r src/utils lambda/load/src/utils
+        cp -r src/ingestion/* lambda/ingestion/src/ingestion/
+        cp -r src/ingestion/* lambda/ingestion/
+        cp -r src/utils lambda/ingestion/src/utils
+        cp -r src/transform/* lambda/transform/src/transform
+        cp -r src/transform/* lambda/transform/
+        cp -r src/utils lambda/transform/src/utils
+        cp -r src/load/* lambda/load/src/load
+        cp -r src/load/* lambda/load/
+        cp -r src/utils lambda/load/src/utils
 
     - name: Zip up lambda package
       run: |
-            cd lambda/ingestion/
-            zip -r ingestion.zip .
-            cd ../transform
-            zip -r transform-lambda.zip .
-            cd ../load
-            zip -r load-lambda.zip . 
-    
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: eu-west-2
+        cd lambda/ingestion/
+        zip -r ingestion.zip .
+        cd ../transform
+        zip -r transform-lambda.zip .
+        cd ../load
+        zip -r load-lambda.zip . 
 
     - name: Terraform Apply Initial Steps
       working-directory: terraform
       run: |
-          terraform apply -auto-approve -input=false
-          aws s3 cp ../lambda/ingestion/ingestion.zip "s3://$(terraform output -raw code_bucket_name)"
-          aws s3 cp ../lambda/transform/transform-lambda.zip "s3://$(terraform output -raw code_bucket_name)"
-          aws s3 cp ../lambda/load/load-lambda.zip "s3://$(terraform output -raw code_bucket_name)"
+        terraform apply -auto-approve -input=false
+        aws s3 cp ../lambda/ingestion/ingestion.zip "s3://$(terraform output -raw code_bucket_name)"
+        aws s3 cp ../lambda/transform/transform-lambda.zip "s3://$(terraform output -raw code_bucket_name)"
+        aws s3 cp ../lambda/load/load-lambda.zip "s3://$(terraform output -raw code_bucket_name)"
 
     - name: Terraform Apply In Full
       working-directory: terraform
       run: | 
-          terraform apply -auto-approve -input=false -var="deploy_lambda_bool=true"
+        terraform apply -auto-approve -input=false -var="deploy_lambda_bool=true"

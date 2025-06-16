@@ -23,6 +23,7 @@ def db():
     yield db
     close_conn(db)
 
+
 @pytest.fixture(scope="module")
 def mock_client():
     with mock_aws():
@@ -53,9 +54,7 @@ def test_extract_data_full_table(db):
     assert actual == expected
 
 
-@pytest.mark.it(
-    "extract_data raises a RuntimeErroer in the event of failure"
-)
+@pytest.mark.it("extract_data raises a RuntimeErroer in the event of failure")
 def test_extract_data_error():
     table_name = "restaurants"
     with pytest.raises(RuntimeError):
@@ -142,9 +141,7 @@ def test_correct_upload(mock_client):
     }
 
 
-@pytest.mark.it(
-    "upload_to_s3 raises a RuntimeError in the event of failure"
-)
+@pytest.mark.it("upload_to_s3 raises a RuntimeError in the event of failure")
 def test_upload_to_s3_error():
     bucket_name = "mock_bucket_2"
     input_data = [
@@ -163,7 +160,7 @@ def test_upload_to_s3_error():
     ]
     input_json = json.dumps(input_data)
     table_name = "currency"
-    
+
     with pytest.raises(RuntimeError):
         upload_to_s3(input_json, bucket_name, table_name)
 

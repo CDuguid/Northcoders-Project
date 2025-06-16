@@ -33,7 +33,7 @@ def lambda_handler(event, context):
     logger.setLevel(logging.INFO)
 
     try:
-        
+
         ingested_data = get_all_table_data_from_ingest_bucket()
         logger.info("Extracted data from ingestion bucket.")
 
@@ -63,7 +63,6 @@ def lambda_handler(event, context):
         for k, v in table_names.items():
             upload_to_s3(v, os.environ["TRANSFORM_BUCKET_NAME"], k)
             logger.info(f"Uploaded transformed data to S3 for table {k}.")
-            
 
         return {
             "statusCode": 200,
