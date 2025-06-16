@@ -2,7 +2,9 @@
 
 This is the final group project for the Northcoders data engineering course. In it, we created an ETL pipeline to handle the data for a fictional company.
 
-Every 15 minutes, the pipeline ingests data from a Postgres database and stores it as JSON in an S3-hosted data lake. It then transforms data into parquet, and loads it into a star schema data warehouse. The process is orchestrated with a Step Function, whose execution is monitored by CloudWatch and whose errors generate email alerts through SNS.
+Every 15 minutes, the pipeline ingests data from a Postgres database and stores it as JSON in an S3-hosted data lake. It then transforms data into parquet, and loads it into a star schema data warehouse.
+
+The process is orchestrated with a Step Function, whose execution is monitored by CloudWatch and whose errors generate email alerts through SNS.
 
 Testing and infrastructure deployment are automated with GitHub Actions. Documentation for our functions [can be found here](https://cduguid.github.io/Northcoders-Project/), courtesy of pdoc.
 
@@ -107,6 +109,20 @@ Fourth, [create an S3 bucket](https://docs.aws.amazon.com/AmazonS3/latest/usergu
 bucket = "<the_name_of_your_S3_bucket>"
 ```
 
+## Execution and usage
+
+### CI/CD Execution using GitHub Actions
+The project is configured to be fully automated. The GitHub Actions workflow triggers on [push](https://github.com/git-guides/git-push) to your GitHub repository. This triggers a series of tests as well as security, linting and formatting checks. After those checks are passed, the AWS infrastructure will be deployed.
+
+For this to work correctly, ensure that you have enabled the project's workflow under the Actions tab of your GitHub repo.
+
+Manual deployment is not recommended, due to the code for the Lambda functions being stored in an S3 bucket that is provisioned during deployment. If you wish to try this anyway, follow the sequence of steps in the `.github/workflows/github_actions.yml` file.
+
+### Errors
+In order to receive e-mail notifications for Lambda alarms caused by errors in the pipeline, you will need to go to `terraform/vars.tf` and change `default` in `alerts_email` to include your e-mail instead.
+
+When the changes are applied, you will receive three e-mails to confirm your SNS subscriptions. Once confirmed, you will be notified any time a problem occurs and can diagnose the problem using AWS CloudWatch log streams.
+
 ## Testing
 While testing happens automatically on push to GitHub, if you wish to test files locally you will need to set up a .env file:
 ```bash
@@ -135,21 +151,6 @@ You can now run either of these commands to run extract/transform/utility tests 
 make unit-test-initial
 make unit-test-load
 ```
-
-## Execution and usage
-
-### CI/CD Execution using GitHub Actions
-The project is configured to be fully automated. The GitHub Actions workflow triggers on [push](https://github.com/git-guides/git-push) to your GitHub repository. This triggers a series of tests as well as security, linting and formatting checks. After those checks are passed, the AWS infrastructure will be deployed.
-
-For this to work correctly, ensure that you have enabled the project's workflow under the Actions tab of your GitHub repo.
-
-Manual deployment is not recommended, due to the code for the Lambda functions being stored in an S3 bucket that is provisioned during deployment. If you wish to try this anyway, follow the sequence of steps in the `.github/workflows/github_actions.yml` file.
-
-### Errors
-In order to receive e-mail notifications for Lambda alarms caused by errors in the pipeline, you will need to go to `terraform/vars.tf` and change `default` in `alerts_email` to include your e-mail instead.
-
-When the changes are applied, you will receive three e-mails to confirm your SNS subscriptions. Once confirmed, you will be notified any time a problem occurs and can diagnose the problem using AWS CloudWatch log streams.
-
 
 ## Data
 
